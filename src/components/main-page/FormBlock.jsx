@@ -1,9 +1,44 @@
-import React, {useState} from 'react';
-import styled from 'styled-components';
+import React, {useEffect, useState} from 'react';
+import styled, { keyframes } from 'styled-components';
 import InputBlock from "../global/InputBlock";
 import SelectBlock from "../global/SelectBlock";
 import { useGetCitiesQuery, useGetSourcesQuery } from "../../store/reducers/jsonsApi";
+import { useAddUserMutation } from "../../store/reducers/userApi";
 import { ReactComponent as Chevron } from "../../assets/imgs/chevron.svg";
+
+const rotate = keyframes`
+  0% {
+    transform: rotate(0);
+  }
+  
+  25% {
+    transform: rotate(360deg);
+  }
+
+  26% {
+    transform: rotate(0);
+  }
+
+  50% {
+    transform: rotate(360deg);
+  }
+
+  51% {
+    transform: rotate(0);
+  }
+
+  75% {
+    transform: rotate(360deg);
+  }
+
+  76% {
+    transform: rotate(0);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+`
 
 const Form = styled.form`
   min-width: 35%;
@@ -61,39 +96,119 @@ const SubmitButton = styled.button`
     color: #828282;
     background-color: #E3E3E3;
   }
+  
+  &.loading {
+    position: relative;
+    padding: 13px 0 12px;
+    
+    span {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      border-bottom: none;
+      border-right: none;
+      animation: ${rotate} 2s linear;
+    }
+  }
 `
 
 const FormBlock = () => {
+  // store
   const cities = useGetCitiesQuery().data;
   const sources = useGetSourcesQuery().data;
-  const [isExtraFields, setIsExtraFields] = useState(false);
-  const [filledForm, setFilledForm] = useState(false);
-  const [name, setName] = useState(null);
-  const [tel, setTel] = useState(null);
-  const [email, setEmail] = useState(null);
-  const [link, setLink] = useState(null);
-  const [city, setCity] = useState(null);
-  const [company, setCompany] = useState(null);
-  const [recipient, setRecipient] = useState(null);
-  const [source, setSource] = useState(null);
+  const [addUser, {isLoading}] = useAddUserMutation();
+
+  // component state
+  const [isExtraFields, setIsExtraFields] = useState(false),
+    [filledForm, setFilledForm] = useState(false),
+    [name, setName] = useState(null),
+    [tel, setTel] = useState(null),
+    [email, setEmail] = useState(null),
+    [link, setLink] = useState(null),
+    [city, setCity] = useState(null),
+    [company, setCompany] = useState(null),
+    [recipient, setRecipient] = useState(null),
+    [source, setSource] = useState(null),
+    [loading, setLoading] = useState(false),
+    [success, setSuccess] = useState(false);
 
   const fd = new FormData();
 
+  useEffect(() => {
+    formValidate()
+  })
+
   const openExtraFields = e => {
     e.preventDefault();
-    setIsExtraFields(!isExtraFields)
+    setIsExtraFields(!isExtraFields);
   }
 
   const formValidate= () => {
     if (name && tel && email && link && city) {
-      setFilledForm(true)
+      setFilledForm(true);
     } else {
-      setFilledForm(false)
+      setFilledForm(false);
     }
   }
 
+  const handleAddUser = async (body) => {
+    console.log(JSON.stringify(body));
+    setName(null);
+    setTel(null);
+    setEmail(null);
+    setLink(null);
+    setCity(null);
+    setCompany(null);
+    setRecipient(null);
+    setSource(null);
+    setSuccess(true);
+    setIsExtraFields(false)
+    await addUser(body).unwrap();
+  }
+
+  const handleForm = e => {
+    e.preventDefault();
+    const user = {
+      user_name: name,
+      user_tel: tel,
+      user_email: email,
+      user_link: link,
+      user_city: city,
+      company,
+      recipient,
+      source,
+    }
+    /*
+      Вариант с формдатой. По условиям после отправки формы нужно вывести боди запроса в формате JSON,
+      в таком случае формдата становится пустым объектом
+    */
+    fd.append('user_name', name.toString());
+    fd.append('user_tel', tel.toString());
+    fd.append('user_email', email.toString());
+    fd.append('user_link', link.toString());
+    fd.append('user_city', city.toString());
+
+    company && fd.append('company_name', company.toString());
+    recipient && fd.append('recipient', recipient.toString());
+    source && fd.append('source', source.toString());
+
+    setLoading(true);
+
+    setTimeout(() => {
+      handleAddUser(user)
+        .then(response => {
+          console.log(response.status)
+        })
+        .catch(error => console.log(error.status))
+      setLoading(false);
+    }, 2000)
+
+  }
+
   return (
-    <Form>
+    <Form onSubmit={e => handleForm(e)}>
       <InputBlock
         type='text'
         placeholder='Иван'
@@ -102,6 +217,7 @@ const FormBlock = () => {
         name='user_name'
         required={true}
         fullWidth={false}
+        success={success}
         setValue={setName}
         formValidate={formValidate}
       />
@@ -114,6 +230,7 @@ const FormBlock = () => {
         name='user_tel'
         required={true}
         fullWidth={false}
+        success={success}
         setValue={setTel}
         formValidate={formValidate}
       />
@@ -126,6 +243,7 @@ const FormBlock = () => {
         name='user_email'
         required={true}
         fullWidth={false}
+        success={success}
         setValue={setEmail}
         formValidate={formValidate}
       />
@@ -138,6 +256,7 @@ const FormBlock = () => {
         name='user_link'
         required={true}
         fullWidth={false}
+        success={success}
         setValue={setLink}
         formValidate={formValidate}
       />
@@ -148,6 +267,7 @@ const FormBlock = () => {
         id='user_city'
         name='user_city'
         required={true}
+        success={success}
         setValue={setCity}
         formValidate={formValidate}
       />
@@ -159,6 +279,7 @@ const FormBlock = () => {
         id='user_link'
         required={false}
         fullWidth={true}
+        value={company}
         setValue={setCompany}
         formValidate={formValidate}
       />
@@ -180,6 +301,7 @@ const FormBlock = () => {
             id='user_link'
             required={false}
             fullWidth={true}
+            success={success}
             setValue={setRecipient}
             formValidate={formValidate}
           />
@@ -190,6 +312,7 @@ const FormBlock = () => {
             id='user_source'
             name='user_source'
             required={false}
+            success={success}
             setValue={setSource}
             formValidate={formValidate}
           />
@@ -199,8 +322,9 @@ const FormBlock = () => {
       <SubmitButton
         type='submit'
         disabled={!filledForm}
+        className={loading || isLoading ? 'loading' : ''}
       >
-        Отправить заявку
+        { loading || isLoading ? (<span></span>) : 'Отправить заявку'}
       </SubmitButton>
     </Form>
   );

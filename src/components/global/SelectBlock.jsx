@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 import { ReactComponent as Chevron } from "../../assets/imgs/chevron.svg";
 
@@ -30,7 +30,7 @@ const PseudoSelectValue = styled.button`
   
   span {
     position: absolute;
-    top: 50%;
+    top: 47%;
     left: 15px;
     transform: translateY(-50%);
     transition: top .2s ease-in-out, font-size .2s ease-in-out, color .2s ease-in-out;
@@ -107,9 +107,9 @@ const PseudoSelectOption = styled.li`
 `
 
 
-const SelectBlock = ({ options, placeholder, required, setValue, formValidate }) => {
+const SelectBlock = ({ options, placeholder, required, setValue, success }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('');
+  const [selectedOption, setSelectedOption] = useState(null);
 
   const setPlaceholder = () => {
     if (selectedOption) {
@@ -118,6 +118,13 @@ const SelectBlock = ({ options, placeholder, required, setValue, formValidate })
       return ''
     }
   }
+
+  useEffect(() => {
+     if (success) {
+       setSelectedOption(null);
+       setPlaceholder();
+     }
+  }, [success])
 
   const isRequired = () => {
     if (required) {
@@ -132,15 +139,14 @@ const SelectBlock = ({ options, placeholder, required, setValue, formValidate })
   }
 
   const openHandler = e => {
-    e.preventDefault()
-    setIsOpen(!isOpen)
+    e.preventDefault();
+    setIsOpen(!isOpen);
   };
 
   const optionHandler = option => {
-    setSelectedOption(option.name || option);
     setValue(option.name || option);
+    setSelectedOption(option.name || option);
     setIsOpen(false);
-    formValidate();
   }
 
   return (

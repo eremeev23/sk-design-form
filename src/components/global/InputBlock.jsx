@@ -13,6 +13,10 @@ const Label = styled.label`
   background-color: #fff;
   pointer-events: none;
   transition: color .2s ease-in-out;
+  
+  &.on-focus {
+    color: #0086A8;
+  }
 `
 
 const Input = styled.div`
@@ -31,10 +35,10 @@ const Input = styled.div`
 
     &:focus {
       border-color: #0086A8;
-
-      & + label {
-        color: #0086A8;
-      }
+    }
+    
+    &:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 1000px white inset;
     }
   }
 `
@@ -73,11 +77,13 @@ const Error = styled.p`
 
 const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, setValue, formValidate }) => {
   const [error, setError] = useState(false);
+  const [focus, setFocus] = useState(false);
 
   const mask = type === "tel" ? "+7 (999) 999-99-99" : '';
 
   const updateValue = () => {
     setError(false);
+    setFocus(true);
     formValidate();
   }
 
@@ -88,7 +94,6 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
       case 'user_name':
         if (value.trim().length >= 2) {
           setValue(value);
-          formValidate();
         } else {
           setValue(null);
           setError(true);
@@ -97,7 +102,6 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
       case 'user_email':
         if (/.+@.+\..+/i.test(value)) {
           setValue(value);
-          formValidate();
         } else {
           setValue(null);
           setError(true);
@@ -106,7 +110,6 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
       case 'user_tel':
         if (value.replaceAll('_', '').length === 18) {
           setValue(value);
-          formValidate();
         } else {
           setValue(null);
           setError(true);
@@ -115,7 +118,6 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
       case 'user_link':
         if (value.trim().length >= 3) {
           setValue(value);
-          formValidate();
         } else {
           setValue(null);
           setError(true);
@@ -130,7 +132,7 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
     if (required) {
       return (
         <>
-          <Label htmlFor={id}>
+          <Label className={focus ? 'on-focus' : ''} htmlFor={id}>
             {label} <sup>*</sup>
           </Label>
           <Error className={error ? 'visible' : ''}>
@@ -140,7 +142,7 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
       )
     } else {
       return (
-        <Label htmlFor={id}>
+        <Label className={focus ? 'on-focus' : ''} htmlFor={id}>
           {label}
         </Label>
       )
@@ -153,6 +155,7 @@ const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, s
         <InputMask
           onChange={e => valueHandler(e)}
           onFocus={updateValue}
+          onBlur={() => setFocus(false)}
           onInput={updateValue}
           type={type}
           id={id}
