@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-
-const InputWrapper = styled.div`
-  position: relative;
-  
-  &.full-width {
-    grid-column: 1/3;
-  }
-`
-
+import InputMask from 'react-input-mask';
 
 const Label = styled.label`
   position: absolute;
@@ -19,61 +11,157 @@ const Label = styled.label`
   font-size: 12px;
   color: #828282;
   background-color: #fff;
+  pointer-events: none;
   transition: color .2s ease-in-out;
 `
 
-const Input = styled.input`
-  outline: none;
-  width: 100%;
-  padding: 18px 15px;
-  font-size: 14px;
-  border: 2px solid #E3E3E3;
-  border-radius: 8px;
-  transition: border-color .2s ease-in-out;
-  
-  &::placeholder {
-    color: #CDCAD0;
-  }
-  
-  &:focus {
-    border-color: #0086A8;
-    
-    & + label {
-      color: #0086A8;
+const Input = styled.div`
+  input {
+    outline: none;
+    width: 100%;
+    padding: 18px 15px;
+    font-size: 14px;
+    border: 2px solid #E3E3E3;
+    border-radius: 8px;
+    transition: border-color .2s ease-in-out;
+
+    &::placeholder {
+      color: #CDCAD0;
+    }
+
+    &:focus {
+      border-color: #0086A8;
+
+      & + label {
+        color: #0086A8;
+      }
     }
   }
 `
 
+const InputWrapper = styled.div`
+  position: relative;
+  
+  &.full-width {
+    grid-column: 1/3;
+  }
+  
+  &.error {
+    input {
+      border-color: #EB5E55;
+    }
+    
+    label {
+      color: #EB5E55;
+    }
+  }
+`
 
-const InputBlock = ({ type, placeholder, label, id, required, fullWidth }) => {
-  const [value, setValue] = useState('');
+const Error = styled.p`
+  display: none;
+  margin-top: 8px;
+  margin-left: 15px;
+  font-size: 12px;
+  color: #EB5E55;
+  line-height: 100%;
+  
+  &.visible {
+    display: block;
+  }
+`
 
-  console.log(value)
+
+const InputBlock = ({ type, placeholder, label, id, name, required, fullWidth, setValue, formValidate }) => {
+  const [error, setError] = useState(false);
+
+  const mask = type === "tel" ? "+7 (999) 999-99-99" : '';
+
+  const updateValue = () => {
+    setError(false);
+    formValidate();
+  }
+
+  const valueHandler = e => {
+    const value = e.target.value;
+
+    switch (name) {
+      case 'user_name':
+        if (value.trim().length >= 2) {
+          setValue(value);
+          formValidate();
+        } else {
+          setValue(null);
+          setError(true);
+        }
+        break;
+      case 'user_email':
+        if (/.+@.+\..+/i.test(value)) {
+          setValue(value);
+          formValidate();
+        } else {
+          setValue(null);
+          setError(true);
+        }
+        break;
+      case 'user_tel':
+        if (value.replaceAll('_', '').length === 18) {
+          setValue(value);
+          formValidate();
+        } else {
+          setValue(null);
+          setError(true);
+        }
+        break;
+      case 'user_link':
+        if (value.trim().length >= 3) {
+          setValue(value);
+          formValidate();
+        } else {
+          setValue(null);
+          setError(true);
+        }
+        break;
+      default:
+        return value;
+    }
+  }
 
   const setLabel = () => {
     if (required) {
       return (
-        <Label htmlFor={id} >
-          { label } <sup>*</sup>
-        </Label>
+        <>
+          <Label htmlFor={id}>
+            {label} <sup>*</sup>
+          </Label>
+          <Error className={error ? 'visible' : ''}>
+            Обязательное поле
+          </Error>
+        </>
       )
     } else {
       return (
-        <Label htmlFor={id} >
-          { label }
+        <Label htmlFor={id}>
+          {label}
         </Label>
       )
     }
   }
 
   return (
-    <InputWrapper className={fullWidth ? 'full-width' : ''}>
-      <Input
-        onChange={e => setValue(e.target.value)}
-        type={type}
-        id={id}
-        placeholder={placeholder}
-      />
+    <InputWrapper className={fullWidth ? 'full-width' : error ? 'error' : ''}>
+      <Input>
+        <InputMask
+          onChange={e => valueHandler(e)}
+          onFocus={updateValue}
+          onInput={updateValue}
+          type={type}
+          id={id}
+          name={name}
+          mask={mask}
+          placeholder={placeholder}
+        />
+      </Input>
+
       { setLabel() }
     </InputWrapper>
   );
