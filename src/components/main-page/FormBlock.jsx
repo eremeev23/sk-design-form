@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import styled, { keyframes } from 'styled-components';
 import InputBlock from "../global/InputBlock";
 import SelectBlock from "../global/SelectBlock";
@@ -119,6 +119,7 @@ const FormBlock = () => {
   const cities = useGetCitiesQuery().data;
   const sources = useGetSourcesQuery().data;
   const [addUser, {isLoading}] = useAddUserMutation();
+  const form = useRef(null);
 
   // component state
   const [isExtraFields, setIsExtraFields] = useState(false),
@@ -164,7 +165,8 @@ const FormBlock = () => {
     setRecipient(null);
     setSource(null);
     setSuccess(true);
-    setIsExtraFields(false)
+    setIsExtraFields(false);
+    form.current.reset();
     await addUser(body).unwrap();
   }
 
@@ -208,7 +210,7 @@ const FormBlock = () => {
   }
 
   return (
-    <Form onSubmit={e => handleForm(e)}>
+    <Form ref={form} onSubmit={e => handleForm(e)}>
       <InputBlock
         type='text'
         placeholder='Иван'
